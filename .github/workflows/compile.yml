@@ -1,0 +1,39 @@
+name: Extract Dylib from iOSGods IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  extract:
+    runs-on: macos-14
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download iOSGods IPA
+        run: |
+          curl -L -o modded.ipa "https://pixeldrain.com/api/file/8vUmrMYq"
+
+      - name: Extract Dylib
+        run: |
+          mkdir extracted_ipafiles
+          unzip -q modded.ipa -d extracted_ipafiles/
+          
+          # On cherche précisément le dylib du cheat Among Us
+          DYLIB_PATH=$(find extracted_ipafiles/Payload -iname "*among*.dylib" | head -n 1)
+          
+          if [ -z "$DYLIB_PATH" ]; then
+            echo "Erreur: libAmongUs introuvable !"
+            exit 1
+          fi
+          
+          echo "Trouvé : $DYLIB_PATH"
+          cp "$DYLIB_PATH" ./libAmongUS.dylib
+
+      - name: Upload Dylib Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Extracted-libAmongUS
+          path: libAmongUS.dylib
+          retention-days: 7
